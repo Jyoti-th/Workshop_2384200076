@@ -1,0 +1,10 @@
+# Build files (Auto-generated after build)
+bin/
+obj/
+.vs
+# Logs (Generated during execution)
+*.log
+logs/
+*.dll
+*.pdb
+*.exe
