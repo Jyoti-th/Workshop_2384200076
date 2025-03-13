@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Interface\" />
-    <Folder Include="Service\" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
   </ItemGroup>
 
 </Project>

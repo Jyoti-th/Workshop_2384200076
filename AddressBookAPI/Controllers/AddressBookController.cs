@@ -1,7 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using BusinessLayer.Interface;
+using BusinessLayer.Validators;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ModelLayer.DTO;
 using RepositoryLayer.Context;
 using RepositoryLayer.Entity;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace AddressBook.Controllers
 {
@@ -9,12 +16,14 @@ namespace AddressBook.Controllers
     [Route("[controller]")]
     public class AddressBookController : ControllerBase
     {
-        private readonly AddressAppContext _context;
+        private readonly IAddressBookService _addressBookService;
+        private readonly IMapper _mapper; // AutoMapper Inject kiya
 
         // Constructor Dependency Injection 
-        public AddressBookController(AddressAppContext context)
+        public AddressBookController(IAddressBookService addressBookService, IMapper mapper)
         {
-            _context = context;
+            _addressBookService = addressBookService;
+            _mapper = mapper;
         }
 
     
@@ -23,56 +32,78 @@ namespace AddressBook.Controllers
         [HttpGet]
         public ActionResult<List<AddressBookEntity>> GetAllContacts()
         {
-            return _context.AddressBooks.ToList(); // 🟢 Simple synchronous approach
+            return _addressBookService.GetAllContacts(); // 🟢 Simple synchronous approach
         }
 
         //  GET: Get contact by ID
         [HttpGet("{id}")]
         public ActionResult<AddressBookEntity> GetContactById(int id)
         {
-            var contact = _context.AddressBooks.FirstOrDefault(c => c.Id == id);
-            if (contact == null)
-                return NotFound();
-
+            var contact = _addressBookService.GetContactById(id);
             return contact;
+           
         }
 
-        // POST: Add a new contact
+        // ADD: Add new Contact
         [HttpPost]
-        public ActionResult<AddressBookEntity> AddContact(AddressBookEntity contact)
+        public ActionResult<AddressBookEntity> AddContact(AddressBookDTO contactDTO)
         {
-            _context.AddressBooks.Add(contact);
-            _context.SaveChanges(); // 🟢 Direct DB Save
-            return CreatedAtAction(nameof(GetContactById), new { id = contact.Id }, contact);
+            var validator = new AddressBookValidator();
+            var validationResult = validator.Validate(contactDTO);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
+
+            //AutoMapper ka use karke DTO ko Entity me convert kar rahe h
+            var contact = _mapper.Map<AddressBookEntity>(contactDTO);
+
+            var result = _addressBookService.AddContact(contact);
+            return CreatedAtAction(nameof(GetContactById), new { id = result.Id }, result);
         }
+
 
         //  PUT: Update an existing contact
         [HttpPut("{id}")]
-        public IActionResult UpdateContact(int id, AddressBookEntity updatedContact)
+        public IActionResult UpdateContact(int id, [FromBody] AddressBookDTO contactDTO)
         {
-            var existingContact = _context.AddressBooks.FirstOrDefault(c => c.Id == id);
+            // Validate DTO using FluentValidation
+            var validator = new AddressBookValidator();
+            var validationResult = validator.Validate(contactDTO);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors); 
+            }
+
+            //  Get the existing contact
+            var existingContact = _addressBookService.GetContactById(id);
             if (existingContact == null)
-                return NotFound();
+            {
+                return NotFound("Contact not found!"); 
+            }
 
-            existingContact.Name = updatedContact.Name;
-            existingContact.PhoneNumber = updatedContact.PhoneNumber;
-            existingContact.Email = updatedContact.Email;
+            // mapping  DTO to  Entity 
+            _mapper.Map(contactDTO, existingContact);
 
-            _context.SaveChanges(); // 🟢 Directly saving changes
-            return NoContent();
+            // 
+            var result = _addressBookService.UpdateContact(id, existingContact);
+
+            return Ok(result); 
         }
+
 
         //  DELETE: Remove a contact
         [HttpDelete("{id}")]
         public IActionResult DeleteContact(int id)
         {
-            var contact = _context.AddressBooks.FirstOrDefault(c => c.Id == id);
-            if (contact == null)
-                return NotFound();
-
-            _context.AddressBooks.Remove(contact);
-            _context.SaveChanges(); // 🟢 Removing entry from DB
-            return NoContent();
+            var contact = _addressBookService.DeleteContact(id);
+            return Ok(contact);
         }
-    }
+
+
+          
+
+        }  
 }
