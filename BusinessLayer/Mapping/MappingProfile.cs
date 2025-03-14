@@ -14,6 +14,11 @@ namespace BusinessLayer.Mapping
         public MappingProfile()
         {
             CreateMap<AddressBookEntity, AddressBookDTO>().ReverseMap();
+
+            // UserDTO to UserEntity Mapping
+             CreateMap<UserDTO, UserEntity>()
+            .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.Password)); // Map Password to PasswordHash
         }
     }
-}
+    }
+

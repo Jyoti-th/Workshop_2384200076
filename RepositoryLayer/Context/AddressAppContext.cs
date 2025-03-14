@@ -17,6 +17,9 @@ namespace RepositoryLayer.Context
         // Address Book Table ke liye DbSet
         public DbSet<AddressBookEntity> AddressBooks { get; set; }
 
+        //Users table ke liye DbSet
+        public DbSet<UserEntity> Users { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
