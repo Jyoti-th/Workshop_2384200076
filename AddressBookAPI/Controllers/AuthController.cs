@@ -1,5 +1,6 @@
 ﻿using BusinessLayer.Helpers;
 using BusinessLayer.Interface;
+using BusinessLayer.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,12 +15,14 @@ namespace AddressBookAPI.Controllers
         private readonly IUserService _userService;
         private readonly JwtTokenGenerator _jwtTokenGenerator; //Inject JWT Helper
         private readonly IEmailService _emailService;
+        private readonly RabbitMQService _rabbitMQService;
 
-        public AuthController(IUserService userService, JwtTokenGenerator jwtTokenGenerator, IEmailService emailService)
+        public AuthController(IUserService userService, JwtTokenGenerator jwtTokenGenerator, IEmailService emailService, RabbitMQService rabbitMQService)
         {
             _userService = userService;
             _jwtTokenGenerator = jwtTokenGenerator;
             _emailService = emailService;
+            _rabbitMQService = rabbitMQService;
         }
 
         [HttpPost("register")]
@@ -28,6 +31,9 @@ namespace AddressBookAPI.Controllers
             try
             {
                 var user = _userService.RegisterUser(userDTO);
+                // Publish User Registered Event
+                _rabbitMQService.PublishMessage("UserRegisteredQueue", $"New user registered: {userDTO.Email}");
+
                 return Ok(new { message = "User registered successfully!", user });
             }
             catch (Exception ex)

@@ -14,5 +14,7 @@ namespace BusinessLayer.Interface
         public AddressBookEntity AddContact(AddressBookEntity contact);
         public AddressBookEntity UpdateContact(int id, AddressBookEntity contact);
         public bool DeleteContact(int id);
+
+      
     }
 }

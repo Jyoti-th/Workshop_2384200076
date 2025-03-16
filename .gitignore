@@ -8,3 +8,4 @@ logs/
 *.dll
 *.pdb
 *.exe
+appsettings.json

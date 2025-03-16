@@ -6,18 +6,30 @@ using System.Text;
 using System.Threading.Tasks;
 using RepositoryLayer.Interface;
 using RepositoryLayer.Entity;
+using Microsoft.EntityFrameworkCore;
+using RepositoryLayer.Context;
 
 namespace BusinessLayer.Service
 {
     public class AddressBookService : IAddressBookService
     {
         private readonly IAddressBookRepository _addressBookRepository;
-            
-        public AddressBookService(IAddressBookRepository addressBookRepository)
+ 
+        private readonly AddressAppContext _context;
+
+        private readonly RabbitMQService _rabbitMQService;
+
+        public AddressBookService(IAddressBookRepository addressBookRepository,  AddressAppContext context, RabbitMQService rabbitMQService)
         {
             _addressBookRepository = addressBookRepository;
+           
+            _context = context;
+
+            _rabbitMQService = rabbitMQService;
         }
 
+     
+        //CRUD Operations
         public List<AddressBookEntity> GetAllContacts()
         {
             return _addressBookRepository.GetAllContacts();
@@ -30,7 +42,13 @@ namespace BusinessLayer.Service
 
         public AddressBookEntity AddContact(AddressBookEntity contact)
         {
-            return _addressBookRepository.AddContact(contact);
+            var addedContact = _addressBookRepository.AddContact(contact);
+
+            // RabbitMQ me event publish karo
+            var message = $"New contact added: {addedContact.Name}, {addedContact.Email}";
+            _rabbitMQService.PublishMessage("ContactAddedQueue", message);
+
+            return addedContact;
         }
 
         public AddressBookEntity UpdateContact(int id, AddressBookEntity contact)

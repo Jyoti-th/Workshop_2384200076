@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BusinessLayer.Service;
 using BusinessLayer.Interface;
 using BusinessLayer.Validators;
 using FluentValidation;
@@ -18,17 +19,22 @@ namespace AddressBook.Controllers
     {
         private readonly IAddressBookService _addressBookService;
         private readonly IMapper _mapper; // AutoMapper Inject kiya
+        private readonly RedisCacheService _redisCacheService;
+    
 
         // Constructor Dependency Injection 
-        public AddressBookController(IAddressBookService addressBookService, IMapper mapper)
+        public AddressBookController(IAddressBookService addressBookService, IMapper mapper, RedisCacheService redisCacheService)
         {
             _addressBookService = addressBookService;
             _mapper = mapper;
+            _redisCacheService = redisCacheService;
+       
+
         }
 
     
 
-        // ✅ GET: Fetch all contacts
+        // GET: Fetch all contacts
         [HttpGet]
         public ActionResult<List<AddressBookEntity>> GetAllContacts()
         {
@@ -58,8 +64,9 @@ namespace AddressBook.Controllers
 
             //AutoMapper ka use karke DTO ko Entity me convert kar rahe h
             var contact = _mapper.Map<AddressBookEntity>(contactDTO);
-
             var result = _addressBookService.AddContact(contact);
+
+            
             return CreatedAtAction(nameof(GetContactById), new { id = result.Id }, result);
         }
 
@@ -102,8 +109,39 @@ namespace AddressBook.Controllers
             return Ok(contact);
         }
 
+        [HttpGet("cache")]
+        public async Task<ActionResult<object>> GetAllContactsFromCache()
+        {
+            string cacheKey = "AddressBookData";
 
-          
+            // 🔹 Pehle Redis se try karo
+            var cachedData = await _redisCacheService.GetAsync<List<AddressBookEntity>>(cacheKey);
+            if (cachedData != null)
+            {
+                return Ok(new
+                {
+                    Message = "Data fetched from Redis Cache",
+                    Source = "Redis",
+                    Data = cachedData
+                });
+            }
 
-        }  
+            // 🔹 Agar Redis me nahi mila to DB se lo
+            var contacts = _addressBookService.GetAllContacts();
+
+            // 🔹 Fir Redis me store karo (expiry: 10 min)
+            await _redisCacheService.SetAsync(cacheKey, contacts, TimeSpan.FromMinutes(10));
+
+            return Ok(new
+            {
+                Message = "Data fetched from Database & stored in Redis",
+                Source = "Database",
+                Data = contacts
+            });
+        }
+
+
+
+
+    }
 }

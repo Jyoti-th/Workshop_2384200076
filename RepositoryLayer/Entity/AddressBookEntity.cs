@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,5 +24,9 @@ namespace RepositoryLayer.Entity
         [EmailAddress]
         public string Email { get; set; }
 
+        //[NotMapped]
+        //public string Source { get; set; }
+
+        
     }
 }
