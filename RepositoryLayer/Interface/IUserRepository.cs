@@ -10,6 +10,7 @@ namespace RepositoryLayer.Interface
     public interface IUserRepository
     {
         UserEntity AddUser(UserEntity user);
+
         UserEntity GetUserByEmail(string email);
 
         public void UpdateUser(UserEntity user);
