@@ -11,6 +11,7 @@ namespace BusinessLayer.Interface
     public interface IUserService
     {
         UserEntity RegisterUser(UserDTO userDTO);
+
         UserEntity LoginUser(string email, string password);
 
 

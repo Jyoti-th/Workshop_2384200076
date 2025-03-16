@@ -19,8 +19,43 @@ using System.Text;
 using BusinessLayer.Helpers;
 
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+// Swagger Configuration
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Address Book API", Version = "v1" });
+    // XML Comments ko enable karne ke liye
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
+    // JWT Authentication ke liye Security Definition add karo
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer {token}' to authenticate"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            new string[] {}
+        }
+    });
+    
+});
 
 Task.Run(() => UserRegisteredConsumer.Consume());
 Task.Run(() => ContactAddedConsumer.Consume());
@@ -51,10 +86,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 builder.Services.AddSingleton<RedisCacheService>();
 
 
-// ✅ JWT Service Register Karo
+// JWT Service Register Karo
 builder.Services.AddSingleton<JwtTokenGenerator>();
 
-// ✅ JWT Configuration
+// JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.ASCII.GetBytes(jwtSettings["SecretKey"]);
 
@@ -109,6 +144,11 @@ builder.Services.AddSingleton<RabbitMQService>();
 
 
 var app = builder.Build();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 
 // Configure Middleware

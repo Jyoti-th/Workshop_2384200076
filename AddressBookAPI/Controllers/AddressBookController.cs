@@ -32,16 +32,22 @@ namespace AddressBook.Controllers
 
         }
 
-    
 
-        // GET: Fetch all contacts
+        /// <summary>
+        /// Gets all contacts from the Address Book.
+        /// </summary>
+        /// <returns> Returns a list of contacts </returns>
         [HttpGet]
         public ActionResult<List<AddressBookEntity>> GetAllContacts()
         {
             return _addressBookService.GetAllContacts(); // 🟢 Simple synchronous approach
         }
 
-        //  GET: Get contact by ID
+        /// <summary>
+        /// Get a Contact from the AddressBook using ID
+        /// </summary>
+        /// <param name="id">The ID of the contactto get detail</param>
+        /// <returns>Returns the searching contact</returns>
         [HttpGet("{id}")]
         public ActionResult<AddressBookEntity> GetContactById(int id)
         {
@@ -50,7 +56,11 @@ namespace AddressBook.Controllers
            
         }
 
-        // ADD: Add new Contact
+        /// <summary>
+        /// Adds a new contact to the Address Book.
+        /// </summary>
+        /// <param name="contactDTO">The contact details to add</param>
+        /// <returns>Returns the added contact</returns>
         [HttpPost]
         public ActionResult<AddressBookEntity> AddContact(AddressBookDTO contactDTO)
         {
@@ -71,7 +81,12 @@ namespace AddressBook.Controllers
         }
 
 
-        //  PUT: Update an existing contact
+        /// <summary>
+        /// Updates an existing contact.
+        /// </summary>
+        /// <param name="id">The ID of the contact to update</param>
+        /// <param name="contactDTO">Updated contact details</param>
+        /// <returns>Returns the updated contact</returns>
         [HttpPut("{id}")]
         public IActionResult UpdateContact(int id, [FromBody] AddressBookDTO contactDTO)
         {
@@ -101,7 +116,11 @@ namespace AddressBook.Controllers
         }
 
 
-        //  DELETE: Remove a contact
+        /// <summary>
+        /// Deletes a contact from the Address Book
+        /// </summary>
+        /// <param name="id">The ID of the contact to delete</param>
+        /// <returns>Returns success or failure</returns>
         [HttpDelete("{id}")]
         public IActionResult DeleteContact(int id)
         {
@@ -109,12 +128,16 @@ namespace AddressBook.Controllers
             return Ok(contact);
         }
 
+        /// <summary>
+        /// Retrieves all contacts from Redis cache. If not found, fetches from the database and stores in Redis.
+        /// </summary>
+        /// <returns>Returns a list of contacts, either from cache or database.</returns>
         [HttpGet("cache")]
         public async Task<ActionResult<object>> GetAllContactsFromCache()
         {
             string cacheKey = "AddressBookData";
 
-            // 🔹 Pehle Redis se try karo
+           
             var cachedData = await _redisCacheService.GetAsync<List<AddressBookEntity>>(cacheKey);
             if (cachedData != null)
             {
@@ -126,10 +149,10 @@ namespace AddressBook.Controllers
                 });
             }
 
-            // 🔹 Agar Redis me nahi mila to DB se lo
+           
             var contacts = _addressBookService.GetAllContacts();
 
-            // 🔹 Fir Redis me store karo (expiry: 10 min)
+            
             await _redisCacheService.SetAsync(cacheKey, contacts, TimeSpan.FromMinutes(10));
 
             return Ok(new
