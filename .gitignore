@@ -1,3 +1,4 @@
+
 # Build files (Auto-generated after build)
 bin/
 obj/
@@ -8,3 +9,4 @@ logs/
 *.dll
 *.pdb
 *.exe
+appsettings.json
