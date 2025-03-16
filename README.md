@@ -14,3 +14,8 @@ UC 2: Implement Forgot & Reset Password
 Section 4: Implementing Advanced Features
 UC 1: Integrate Redis for Caching
 UC 2: Integrate RabbitMQ for Event-Driven Messaging
+
+Section 5: API Testing & Documentation
+UC 1: Document API with Swagger
+UC 2: Test API using CURL Commands
+
